@@ -839,10 +839,25 @@ gc_more:
 	if (unlikely(f2fs_cp_error(sbi)))
 		goto stop;
 
-	if (gc_type == BG_GC && has_not_enough_free_secs(sbi, sec_freed)) {
-		gc_type = FG_GC;
-		if (__get_victim(sbi, &segno, gc_type) || prefree_segments(sbi))
-			write_checkpoint(sbi, &cpc);
+	if (gc_type == BG_GC && has_not_enough_free_secs(sbi, 0, 0)) {
+		/*
+		 * For example, if there are many prefree_segments below given
+		 * threshold, we can make them free by checkpoint. Then, we
+		 * secure free segments which doesn't need fggc any more.
+		 */
+		if (__get_victim(sbi, &segno, gc_type) ||
+						prefree_segments(sbi)) {
+			ret = write_checkpoint(sbi, &cpc);
+			if (ret)
+				goto stop;
+			segno = NULL_SEGNO;
+		} else if (has_not_enough_free_secs(sbi, 0, 0)) {
+			ret = write_checkpoint(sbi, &cpc);
+			if (ret)
+				goto stop;
+		}
+		if (has_not_enough_free_secs(sbi, 0, 0))
+			gc_type = FG_GC;
 	}
 
 	if (segno == NULL_SEGNO && !__get_victim(sbi, &segno, gc_type))
