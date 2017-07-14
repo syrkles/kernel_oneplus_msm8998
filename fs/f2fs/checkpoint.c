@@ -835,6 +835,8 @@ retry:
 	inode = igrab(entry->inode);
 	spin_unlock(&sbi->dir_inode_lock);
 	if (inode) {
+		unsigned long cur_ino = inode->i_ino;
+
 		filemap_fdatawrite(inode->i_mapping);
 		iput(inode);
 	} else {
