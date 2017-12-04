@@ -25,6 +25,7 @@
  * Timeout for stopping processes
  */
 unsigned int __read_mostly freeze_timeout_msecs = 2 * MSEC_PER_SEC;
+extern bool fp_irq_cnt;
 
 static int try_to_freeze_tasks(bool user_only)
 {
